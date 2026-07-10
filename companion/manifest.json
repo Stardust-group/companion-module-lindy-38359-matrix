@@ -1,11 +1,11 @@
 {
         "$schema": "../node_modules/@companion-module/base/assets/manifest.schema.json",
         "type": "connection",
-        "id": "companion-module-lindy-38359-matrix",
+        "id": "lindy-38359-matrix",
         "name": "Lindy 38359 HDMI Matrix",
         "shortname": "Lindy Matrix",
         "description": "Control module for the Lindy 38359 16x16 HDMI 4K60 Matrix",
-        "version": "0.1.0",
+        "version": "1.0.0",
         "license": "MIT",
         "repository": "https://github.com/Stardust-group/companion-module-lindy-38359-matrix",
         "bugs": "https://github.com/Stardust-group/companion-module-lindy-38359-matrix/issues",
