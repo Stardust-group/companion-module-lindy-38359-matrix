@@ -1,6 +1,6 @@
 {
 	"name": "companion-module-lindy-38359-matrix",
-	"version": "0.1.0",
+	"version": "1.0.0",
 	"main": "dist/main.js",
 	"type": "module",
 	"scripts": {
@@ -16,7 +16,7 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/Alexisepita/companion-module-lindy-38359-matrix.git"
+		"url": "git+https://github.com/Stardust-group/companion-module-lindy-38359-matrix.git"
 	},
 	"engines": {
 		"node": "^22.20",
