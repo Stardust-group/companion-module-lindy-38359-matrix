@@ -1,4 +1,4 @@
-import { InstanceBase, InstanceStatus, TCPHelper, type SomeCompanionConfigField, } from '@companion-module/base'
+import { InstanceBase, InstanceStatus, TCPHelper, type SomeCompanionConfigField } from '@companion-module/base'
 
 interface LindyConfig extends Record<string, any> {
 	host: string
@@ -32,23 +32,36 @@ const CHOICE_PRESETS = Array.from({ length: 16 }, (_, i) => ({
 }))
 
 const CHOICES_EDID = [
-	{ id: '1',  label: '1080p, Stereo Audio 2.0' }, { id: '2',  label: '1080p, Dolby/DTS 5.1' }, { id: '3',  label: '1080p, HD Audio 7.1' },
-	{ id: '4',  label: '1080i, Stereo Audio 2.0' }, { id: '5',  label: '1080i, Dolby/DTS 5.1' }, { id: '6',  label: '1080i, HD Audio 7.1' },
-	{ id: '7',  label: '3D, Stereo Audio 2.0' }, { id: '8',  label: '3D, Dolby/DTS 5.1' }, { id: '9',  label: '3D, HD Audio 7.1' },
-	{ id: '10', label: '4K2K30_444, Stereo Audio 2.0' }, { id: '11', label: '4K2K30_444, Dolby/DTS 5.1' }, { id: '12', label: '4K2K30_444, HD Audio 7.1' }, 
-	{ id: '13', label: '4K2K60_420, Stereo Audio 2.0' }, { id: '14', label: '4K2K60_420, Dolby/DTS 5.1' }, { id: '15', label: '4K2K60_420, HD Audio 7.1' },
-	{ id: '16', label: '4K2K60_444, Stereo Audio 2.0' }, { id: '17', label: '4K2K60_444, Dolby/DTS 5.1' }, { id: '18', label: '4K2K60_444, HD Audio 7.1' },
-	{ id: '19', label: '4K2K60_444, Stereo Audio 2.0 HDR' }, { id: '20', label: '4K2K60_444, Dolby/DTS 5.1 HDR' }, { id: '21', label: '4K2K60_444, HD Audio 7.1 HDR' },
-	{ id: '22', label: 'User1' }, { id: '23', label: 'User2' },
+	{ id: '1', label: '1080p, Stereo Audio 2.0' },
+	{ id: '2', label: '1080p, Dolby/DTS 5.1' },
+	{ id: '3', label: '1080p, HD Audio 7.1' },
+	{ id: '4', label: '1080i, Stereo Audio 2.0' },
+	{ id: '5', label: '1080i, Dolby/DTS 5.1' },
+	{ id: '6', label: '1080i, HD Audio 7.1' },
+	{ id: '7', label: '3D, Stereo Audio 2.0' },
+	{ id: '8', label: '3D, Dolby/DTS 5.1' },
+	{ id: '9', label: '3D, HD Audio 7.1' },
+	{ id: '10', label: '4K2K30_444, Stereo Audio 2.0' },
+	{ id: '11', label: '4K2K30_444, Dolby/DTS 5.1' },
+	{ id: '12', label: '4K2K30_444, HD Audio 7.1' },
+	{ id: '13', label: '4K2K60_420, Stereo Audio 2.0' },
+	{ id: '14', label: '4K2K60_420, Dolby/DTS 5.1' },
+	{ id: '15', label: '4K2K60_420, HD Audio 7.1' },
+	{ id: '16', label: '4K2K60_444, Stereo Audio 2.0' },
+	{ id: '17', label: '4K2K60_444, Dolby/DTS 5.1' },
+	{ id: '18', label: '4K2K60_444, HD Audio 7.1' },
+	{ id: '19', label: '4K2K60_444, Stereo Audio 2.0 HDR' },
+	{ id: '20', label: '4K2K60_444, Dolby/DTS 5.1 HDR' },
+	{ id: '21', label: '4K2K60_444, HD Audio 7.1 HDR' },
+	{ id: '22', label: 'User1' },
+	{ id: '23', label: 'User2' },
 	...Array.from({ length: 16 }, (_, i) => ({
 		id: String(i + 24),
 		label: `Copy from HDMI Output ${i + 1}`,
 	})),
 ]
 
-
 class LindyMatrixInstance extends InstanceBase<LindyTypes> {
-
 	private tcp: TCPHelper | null = null
 	private isPoweredOn: boolean = true
 	private currentRouting: Map<string, string> = new Map()
@@ -107,67 +120,66 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 		})
 	}
 
-private parseMessage(message: string): void {
-    const msg = message.toLowerCase()
+	private parseMessage(message: string): void {
+		const msg = message.toLowerCase()
 
-    // Réponse à "r power!" ou suite à un changement d'état via panneau/IR
-    if (msg.includes('power on')) {
-        this.isPoweredOn = true
-        ;(this as any).setVariableValues({
-            power_button_text: 'ETEINDRE',
-        })
-        ;(this as any).checkFeedbacks('power_state')
-        this.log('debug', 'Matrix is ON')
-    } else if (msg.includes('power off')) {
-        this.isPoweredOn = false
-        ;(this as any).setVariableValues({
-            power_button_text: 'ALLUMER',
-        })
-        ;(this as any).checkFeedbacks('power_state')
-        this.log('debug', 'Matrix is OFF')
-    }
+		// Réponse à "r power!" ou suite à un changement d'état via panneau/IR
+		if (msg.includes('power on')) {
+			this.isPoweredOn = true
+			;(this as any).setVariableValues({
+				power_button_text: 'ETEINDRE',
+			})
+			;(this as any).checkFeedbacks('power_state')
+			this.log('debug', 'Matrix is ON')
+		} else if (msg.includes('power off')) {
+			this.isPoweredOn = false
+			;(this as any).setVariableValues({
+				power_button_text: 'ALLUMER',
+			})
+			;(this as any).checkFeedbacks('power_state')
+			this.log('debug', 'Matrix is OFF')
+		}
 
-    // Réponse à "r lock!" ou suite à un verrouillage via panneau
-    if (msg.includes('panel button lock on')) {
-        this.isPanelLocked = true
-        ;(this as any).setVariableValues({
-            lock_button_text: 'DEVERROUILLER',
-        })
-        ;(this as any).checkFeedbacks('lock_state')
-        this.log('debug', 'Panel is LOCKED')
-    } else if (msg.includes('panel button lock off')) {
-        this.isPanelLocked = false
-        ;(this as any).setVariableValues({
-            lock_button_text: 'VERROUILLER',
-        })
-        ;(this as any).checkFeedbacks('lock_state')
-        this.log('debug', 'Panel is UNLOCKED')
-    }
+		// Réponse à "r lock!" ou suite à un verrouillage via panneau
+		if (msg.includes('panel button lock on')) {
+			this.isPanelLocked = true
+			;(this as any).setVariableValues({
+				lock_button_text: 'DEVERROUILLER',
+			})
+			;(this as any).checkFeedbacks('lock_state')
+			this.log('debug', 'Panel is LOCKED')
+		} else if (msg.includes('panel button lock off')) {
+			this.isPanelLocked = false
+			;(this as any).setVariableValues({
+				lock_button_text: 'VERROUILLER',
+			})
+			;(this as any).checkFeedbacks('lock_state')
+			this.log('debug', 'Panel is UNLOCKED')
+		}
 
-	// Réponse à "r HDMI y stream!" ou suite à un changement
-	const hdmiMatch = msg.match(/hdmi output (\d+) stream/)
-	if (hdmiMatch) {
-		const output = hdmiMatch[1]
-		const isEnabled = msg.includes('enable')
-		this.hdmiStreamState.set(output, isEnabled)
-		;(this as any).checkFeedbacks('hdmi_stream_active')
-		this.log('debug', `HDMI Output ${output} stream: ${isEnabled ? 'enabled' : 'disabled'}`)
+		// Réponse à "r HDMI y stream!" ou suite à un changement
+		const hdmiMatch = msg.match(/hdmi output (\d+) stream/)
+		if (hdmiMatch) {
+			const output = hdmiMatch[1]
+			const isEnabled = msg.includes('enable')
+			this.hdmiStreamState.set(output, isEnabled)
+			;(this as any).checkFeedbacks('hdmi_stream_active')
+			this.log('debug', `HDMI Output ${output} stream: ${isEnabled ? 'enabled' : 'disabled'}`)
+		}
+
+		// Réponse à "r av out y!" → "input 1 -> output 2"
+		const routeMatches = msg.matchAll(/input (\d+) -> output (\d+)/g)
+		for (const match of routeMatches) {
+			const input = match[1]
+			const output = match[2]
+			this.currentRouting.set(output, input)
+			this.log('debug', `Routing updated: Input ${input} -> Output ${output}`)
+		}
+		// Rafraîchit les feedbacks une seule fois après avoir tout mis à jour
+		if ([...msg.matchAll(/input (\d+) -> output (\d+)/g)].length > 0) {
+			;(this as any).checkFeedbacks('route_active')
+		}
 	}
-
-	// Réponse à "r av out y!" → "input 1 -> output 2"
-	const routeMatches = msg.matchAll(/input (\d+) -> output (\d+)/g)
-	for (const match of routeMatches) {
-		const input = match[1]
-		const output = match[2]
-		this.currentRouting.set(output, input)
-		this.log('debug', `Routing updated: Input ${input} -> Output ${output}`)
-	}
-	// Rafraîchit les feedbacks une seule fois après avoir tout mis à jour
-	if ([...msg.matchAll(/input (\d+) -> output (\d+)/g)].length > 0) {
-		;(this as any).checkFeedbacks('route_active')
-	}
-
-}
 
 	private connectTCP(config: LindyConfig): void {
 		this.tcp = new TCPHelper(config.host, config.port)
@@ -178,10 +190,9 @@ private parseMessage(message: string): void {
 			this.sendCommand('r power!')
 			this.sendCommand('r lock!')
 			this.sendCommand('r av out 0!')
-			    for (let output = 1; output <= 16; output++) {
-        			this.sendCommand(`r HDMI ${output} stream!`)
-    			}
-
+			for (let output = 1; output <= 16; output++) {
+				this.sendCommand(`r HDMI ${output} stream!`)
+			}
 
 			this.tcp?.on('data', (data) => {
 				const message = data.toString().trim()
@@ -196,14 +207,13 @@ private parseMessage(message: string): void {
 		})
 
 		this.tcp.on('data', (data) => {
-		const message = data.toString().trim()
+			const message = data.toString().trim()
 
-		this.log('debug', `Received: ${message}`)
+			this.log('debug', `Received: ${message}`)
 
-		/*this.parseMessage(message)*/
+			/*this.parseMessage(message)*/
 		})
 	}
-
 
 	private sendCommand(cmd: string): void {
 		if (this.tcp && this.tcp.isConnected) {
@@ -214,10 +224,8 @@ private parseMessage(message: string): void {
 		}
 	}
 
-
 	private registerActions(): void {
 		;(this as any).setActionDefinitions({
-
 			route_input: {
 				name: 'Route Input to Output',
 				options: [
@@ -241,8 +249,15 @@ private parseMessage(message: string): void {
 				name: 'Power On/Off',
 				options: [
 					{
-						type: 'dropdown', id: 'state', label: 'State', default: '1',
-						choices: [{ id: '1', label: 'Power On' }, { id: '0', label: 'Power Off' }, {id : '2', label: 'Toggle'}],
+						type: 'dropdown',
+						id: 'state',
+						label: 'State',
+						default: '1',
+						choices: [
+							{ id: '1', label: 'Power On' },
+							{ id: '0', label: 'Power Off' },
+							{ id: '2', label: 'Toggle' },
+						],
 					},
 				],
 				callback: async (action: any) => {
@@ -258,9 +273,7 @@ private parseMessage(message: string): void {
 
 			recall_preset: {
 				name: 'Preset Recall',
-				options: [
-					{ type: 'dropdown', id: 'preset', label: 'Preset', default: '1', choices: CHOICE_PRESETS },
-				],
+				options: [{ type: 'dropdown', id: 'preset', label: 'Preset', default: '1', choices: CHOICE_PRESETS }],
 				callback: async (action: any) => {
 					this.sendCommand(`s recall preset ${action.options.preset}!`)
 				},
@@ -268,9 +281,7 @@ private parseMessage(message: string): void {
 
 			save_preset: {
 				name: 'Preset Save',
-				options: [
-					{ type: 'dropdown', id: 'preset', label: 'Preset', default: '1', choices: CHOICE_PRESETS },
-				],
+				options: [{ type: 'dropdown', id: 'preset', label: 'Preset', default: '1', choices: CHOICE_PRESETS }],
 				callback: async (action: any) => {
 					this.sendCommand(`s save preset ${action.options.preset}!`)
 				},
@@ -278,9 +289,7 @@ private parseMessage(message: string): void {
 
 			clear_preset: {
 				name: 'Preset Clear',
-				options: [
-					{ type: 'dropdown', id: 'preset', label: 'Preset', default: '1', choices: CHOICE_PRESETS },
-				],
+				options: [{ type: 'dropdown', id: 'preset', label: 'Preset', default: '1', choices: CHOICE_PRESETS }],
 				callback: async (action: any) => {
 					this.sendCommand(`s clear preset ${action.options.preset}!`)
 				},
@@ -291,8 +300,15 @@ private parseMessage(message: string): void {
 				options: [
 					{ type: 'dropdown', id: 'output', label: 'Output', default: '1', choices: CHOICES_OUTPUTS },
 					{
-						type: 'dropdown', id: 'state', label: 'State', default: '1',
-						choices: [{ id: '1', label: 'Enable' }, { id: '0', label: 'Disable' }, { id : '2', label: 'Toggle' }],
+						type: 'dropdown',
+						id: 'state',
+						label: 'State',
+						default: '1',
+						choices: [
+							{ id: '1', label: 'Enable' },
+							{ id: '0', label: 'Disable' },
+							{ id: '2', label: 'Toggle' },
+						],
 					},
 				],
 				callback: async (action: any) => {
@@ -302,12 +318,12 @@ private parseMessage(message: string): void {
 					if (state === '2') {
 						const currentState = this.hdmiStreamState.get(output)
 
-					if (currentState === undefined) {
-						this.log('warn', `Unknown HDMI stream state for output ${output}`)
-						return
-					}
+						if (currentState === undefined) {
+							this.log('warn', `Unknown HDMI stream state for output ${output}`)
+							return
+						}
 
-					state = currentState ? '0' : '1'
+						state = currentState ? '0' : '1'
 					}
 
 					this.sendCommand(`s HDMI ${output} stream ${state}!`)
@@ -315,15 +331,20 @@ private parseMessage(message: string): void {
 				},
 			},
 
-
-
 			scaler_mode: {
 				name: 'Define Scaler Mode',
 				options: [
 					{ type: 'dropdown', id: 'output', label: 'Output', default: '1', choices: CHOICES_OUTPUTS },
 					{
-						type: 'dropdown', id: 'state', label: 'Mode', default: '1',
-						choices: [{ id: '1', label: 'Bypass' }, { id: '2', label: '4K->1080p' }, { id: '3', label: 'Auto' }],
+						type: 'dropdown',
+						id: 'state',
+						label: 'Mode',
+						default: '1',
+						choices: [
+							{ id: '1', label: 'Bypass' },
+							{ id: '2', label: '4K->1080p' },
+							{ id: '3', label: 'Auto' },
+						],
 					},
 				],
 				callback: async (action: any) => {
@@ -335,8 +356,15 @@ private parseMessage(message: string): void {
 				name: 'Lock/Unlock Front Panel',
 				options: [
 					{
-						type: 'dropdown', id: 'state', label: 'State', default: '2',
-						choices: [{ id: '1', label: 'Lock' }, { id: '0', label: 'Unlock' }, { id: '2', label: 'Toggle' }],
+						type: 'dropdown',
+						id: 'state',
+						label: 'State',
+						default: '2',
+						choices: [
+							{ id: '1', label: 'Lock' },
+							{ id: '0', label: 'Unlock' },
+							{ id: '2', label: 'Toggle' },
+						],
 					},
 				],
 				callback: async (action: any) => {
@@ -348,7 +376,6 @@ private parseMessage(message: string): void {
 					this.sendCommand('r lock!')
 				},
 			},
-
 
 			edid: {
 				name: 'Set EDID for Input',
@@ -368,13 +395,11 @@ private parseMessage(message: string): void {
 					this.sendCommand('s reboot!')
 				},
 			},
-
 		})
 	}
 
 	private registerFeedbacks(): void {
 		;(this as any).setFeedbackDefinitions({
-
 			power_state: {
 				type: 'boolean',
 				name: 'Power',
@@ -392,55 +417,52 @@ private parseMessage(message: string): void {
 			route_active: {
 				type: 'boolean',
 				name: 'Route Active',
-				options: [{ type: 'dropdown', id: 'input', label: 'Input', default: '1', choices: CHOICE_INPUTS },
-				{ type: 'dropdown', id: 'output', label: 'Output', default: '1', choices: CHOICES_OUTPUTS },
-						],
-						defaultStyle: {
-						bgcolor: 3212,
-						color: 16777215,
-						},
-					callback: (feedback: any) => {
-						const input = String(feedback.options.input)
-						const output = String(feedback.options.output)
+				options: [
+					{ type: 'dropdown', id: 'input', label: 'Input', default: '1', choices: CHOICE_INPUTS },
+					{ type: 'dropdown', id: 'output', label: 'Output', default: '1', choices: CHOICES_OUTPUTS },
+				],
+				defaultStyle: {
+					bgcolor: 3212,
+					color: 16777215,
+				},
+				callback: (feedback: any) => {
+					const input = String(feedback.options.input)
+					const output = String(feedback.options.output)
 
-						return this.currentRouting.get(output) === input
+					return this.currentRouting.get(output) === input
 				},
 			},
-			
+
 			lock_state: {
 				type: 'boolean',
 				name: 'Lock State',
 				options: [],
 				defaultStyle: {
-					bgcolor: 360448,    
+					bgcolor: 360448,
 					color: 16777215,
 				},
 				callback: () => {
 					return this.isPanelLocked
-						},
-					},
-
-
-				hdmi_stream_active: {
-					type: 'boolean',
-					name: 'HDMI Stream Active',
-					options: [
-						{ type: 'dropdown', id: 'output', label: 'Output', default: '1', choices: CHOICES_OUTPUTS },
-					],
-					defaultStyle: {
-						bgcolor: 9830400,  
-						color: 16777215,
-					},
-					callback: (feedback: any) => {
-						const output = String(feedback.options.output)
-						return this.hdmiStreamState.get(output) ?? true
-					},
 				},
+			},
+
+			hdmi_stream_active: {
+				type: 'boolean',
+				name: 'HDMI Stream Active',
+				options: [{ type: 'dropdown', id: 'output', label: 'Output', default: '1', choices: CHOICES_OUTPUTS }],
+				defaultStyle: {
+					bgcolor: 9830400,
+					color: 16777215,
+				},
+				callback: (feedback: any) => {
+					const output = String(feedback.options.output)
+					return this.hdmiStreamState.get(output) ?? true
+				},
+			},
 		})
 	}
 
 	private registerPresets(): void {
-
 		// Structure obligatoire en v2.0.4 — définit les catégories
 		const structure: Array<{ id: string; name: string; definitions: any[] }> = [
 			{ id: 'routing', name: 'Routing', definitions: [] },
@@ -453,7 +475,7 @@ private parseMessage(message: string): void {
 
 		// 256 boutons de routage
 		for (let output = 1; output <= 16; output++) {
-			const group : { id: string; type : string , name: string; presets: string[] } = {
+			const group: { id: string; type: string; name: string; presets: string[] } = {
 				id: `routing_output_${output}`,
 				type: 'simple',
 				name: `Output ${output}`,
@@ -583,7 +605,7 @@ private parseMessage(message: string): void {
 						{
 							actionId: 'lock_panel',
 							options: {
-								state : '2',
+								state: '2',
 							},
 						},
 					],
@@ -620,8 +642,7 @@ private parseMessage(message: string): void {
 						down: [
 							{
 								actionId: 'hdmi_stream',
-								options: { output: String(output), state: '2',
-								},
+								options: { output: String(output), state: '2' },
 							},
 						],
 						up: [],
@@ -675,6 +696,5 @@ private parseMessage(message: string): void {
 		;(this as any).setPresetDefinitions(structure, presets)
 	}
 }
-
 
 export default LindyMatrixInstance
