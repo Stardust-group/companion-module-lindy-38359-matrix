@@ -7,8 +7,8 @@
         "description": "Control module for the Lindy 38359 16x16 HDMI 4K60 Matrix",
         "version": "0.1.0",
         "license": "MIT",
-        "repository": "git+https://github.com/Alexisepita/companion-module-lindy-38359-matrix.git",
-        "bugs": "https://github.com/Alexisepita/companion-module-lindy-38359-matrix/issues",
+        "repository": "https://github.com/Stardust-group/companion-module-lindy-38359-matrix",
+        "bugs": "https://github.com/Stardust-group/companion-module-lindy-38359-matrix/issues",
         "maintainers": [
                 {
                         "name": "Alexisepita",
