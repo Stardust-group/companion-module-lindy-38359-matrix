@@ -66,7 +66,7 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 	private isPoweredOn: boolean = true
 	private currentRouting: Map<string, string> = new Map()
 
-	async init(config: LindyConfig, _isFirstInit: boolean, _secrets: any): Promise<void> {
+	async init(config: LindyConfig, _isFirstInit: boolean, _secrets: unknown): Promise<void> {
 		this.updateStatus(InstanceStatus.Connecting)
 		this.connectTCP(config)
 		this.registerActions()
@@ -80,7 +80,7 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 	}
 
 	// configUpdated reçoit aussi 2 arguments en v2.0.4
-	async configUpdated(config: LindyConfig, _secrets: any): Promise<void> {
+	async configUpdated(config: LindyConfig, _secrets: unknown): Promise<void> {
 		this.tcp?.destroy()
 		this.connectTCP(config)
 	}
