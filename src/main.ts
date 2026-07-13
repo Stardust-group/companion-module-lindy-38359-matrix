@@ -76,9 +76,9 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 		this.registerVariables()
 		this.registerPresets()
 
-		void this.fetchInputNames()
+		void this.fetchVideoStatus()
 		setInterval(() => {
-			void this.fetchInputNames()
+			void this.fetchVideoStatus()
 		}, 60000)
 	}
 
@@ -118,10 +118,17 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 
 	private registerVariables(): void {
 		const inputVars: Record<string, any> = {}
+		const outputVars: Record<string, any> = {}
 
 		for (let i = 1; i <= 16; i++) {
 			inputVars[`input_${i}_name`] = {
 				name: `Nom Input ${i}`,
+			}
+		}
+
+		for (let i = 1; i <= 16; i++) {
+			outputVars[`output_${i}_name`] = {
+				name: `Nom Output ${i}`,
 			}
 		}
 
@@ -133,6 +140,7 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 				name: 'Lock Button Text',
 			},
 			...inputVars,
+			...outputVars,
 		})
 		;(this as any).setVariableValues({
 			power_button_text: this.isPoweredOn ? 'ETEINDRE' : 'ALLUMER',
@@ -140,34 +148,54 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 		})
 	}
 
-	private async fetchInputNames(): Promise<void> {
-		try {
-			this.log('debug', `Fetching http://${this.config.host}/cgi-bin/instr`)
-			const respond = await fetch(`http://${this.config.host}/cgi-bin/instr`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/x-www-form-urlencoded',
-				},
-				body: JSON.stringify({ comhead: 'get input status', language: 0 }),
-			})
-			const text = await respond.text()
+	private async fetchVideoStatus(): Promise<void> {
+    try {
+        this.log('debug', `Fetching video status from http://${this.config.host}/cgi-bin/instr`)
+        const respond = await fetch(`http://${this.config.host}/cgi-bin/instr`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: JSON.stringify({ comhead: 'get video status', language: 0 }),
+        })
+        const text = await respond.text()
+        const data = JSON.parse(text)
 
-			const match = text.match(/"inname"\s*:\s*(\[.*?\])/)
-			if (match) {
-				const inname: string[] = JSON.parse(match[1])
-				const values: Record<string, string> = {}
-				inname.forEach((name: string, index: number) => {
-					values[`input_${index + 1}_name`] = name
-				})
-				;(this as any).setVariableValues(values)
-				this.log('debug', `Inputs mis à jour: ${inname.join(', ')}`)
-			} else {
-				this.log('warn', `pas de champ inname trouvé dans: ${text}`)
-			}
-		} catch (e) {
-			this.log('error', `Erreur fetchInputNames: ${e}`)
-		}
-	}
+        const values: Record<string, string> = {}
+
+        // Noms des entrées
+        if (data.allinputname) {
+            data.allinputname.forEach((name: string, index: number) => {
+                values[`input_${index + 1}_name`] = name
+            })
+            this.log('debug', `Inputs mis à jour: ${data.allinputname.join(', ')}`)
+        }
+
+        // Noms des sorties
+        if (data.alloutputname) {
+            data.alloutputname.slice(0, 16).forEach((name: string, index: number) => {
+                values[`output_${index + 1}_name`] = name
+				this.log('debug', `output_${index + 1}_name = ${name}`)
+            })
+            this.log('debug', `Outputs mis à jour: ${data.alloutputname.slice(0, 16).join(', ')}`)
+        }
+
+        // Routing actuel — allsource[i] = input assigné à output i+1
+        if (data.allsource) {
+            data.allsource.slice(0, 16).forEach((input: number, index: number) => {
+                const output = String(index + 1)
+                this.currentRouting.set(output, String(input))
+            })
+            ;(this as any).checkFeedbacks('route_active')
+            this.log('debug', `Routing mis à jour depuis allsource`)
+        }
+
+        ;(this as any).setVariableValues(values)
+
+    } catch (e) {
+        this.log('error', `Erreur fetchVideoStatus: ${e}`)
+    }
+}
 
 	private parseMessage(message: string): void {
 		const msg = message.toLowerCase()
@@ -536,7 +564,7 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 					type: 'simple',
 					name: `Input ${input} -> Output ${output}`,
 					style: {
-						text: `$(lindy-38359-matrix:input_${input}_name)\n-> OUT${output}`,
+						text: `$(lindy-38359-matrix:input_${input}_name)\n-> $(lindy-38359-matrix:output_${output}_name)`,
 						size: '14',
 						color: 16777215,
 						bgcolor: 3212,
