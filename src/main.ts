@@ -79,7 +79,7 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 		void this.fetchVideoStatus()
 		setInterval(() => {
 			void this.fetchVideoStatus()
-		}, 60000)
+		}, 6000)
 	}
 
 	async destroy(): Promise<void> {
@@ -180,7 +180,6 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 				data.alloutputname.slice(0, 16).forEach((name: string, index: number) => {
 					values[`output_${index + 1}_name`] = name
 					this.outputNames.set(index + 1, name)
-					this.log('debug', `output_${index + 1}_name = ${name}`)
 				})
 				this.log('debug', `Outputs mis à jour: ${data.alloutputname.slice(0, 16).join(', ')}`)
 			}
