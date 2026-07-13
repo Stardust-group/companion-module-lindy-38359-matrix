@@ -576,7 +576,6 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 
 		const presets: Record<string, any> = {}
 
-		// 256 boutons de routage
 		for (let output = 1; output <= 16; output++) {
 			const group: { id: string; type: string; name: string; presets: string[] } = {
 				id: `routing_output_${output}`,
