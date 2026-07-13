@@ -65,14 +65,21 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 	private tcp: TCPHelper | null = null
 	private isPoweredOn: boolean = true
 	private currentRouting: Map<string, string> = new Map()
+	private config!: LindyConfig
 
 	async init(config: LindyConfig, _isFirstInit: boolean, _secrets: unknown): Promise<void> {
+		this.config = config
 		this.updateStatus(InstanceStatus.Connecting)
 		this.connectTCP(config)
 		this.registerActions()
 		this.registerFeedbacks()
 		this.registerVariables()
 		this.registerPresets()
+
+		this.fetchInputNames()
+		setInterval(() => {
+			this.fetchInputNames()
+		}, 60000)
 	}
 
 	async destroy(): Promise<void> {
@@ -110,15 +117,62 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 	private hdmiStreamState: Map<string, boolean> = new Map()
 
 	private registerVariables(): void {
+		const inputVars: Record<string, any> = {}
+
+		for (let i = 1; i <= 16; i++) {
+			inputVars[`input_${i}_name`] = {
+				name: `Nom Input ${i}`,
+			}
+		}
+
 		;(this as any).setVariableDefinitions({
-			power_button_text: { name: 'Power Button Text' },
-			lock_button_text: { name: 'Lock Button Text' },
+			power_button_text: {
+				name: 'Power Button Text',
+			},
+			lock_button_text: {
+				name: 'Lock Button Text',
+			},
+			...inputVars,
 		})
+
 		;(this as any).setVariableValues({
 			power_button_text: this.isPoweredOn ? 'ETEINDRE' : 'ALLUMER',
 			lock_button_text: this.isPanelLocked ? 'DEVERROUILLER' : 'VERROUILLER',
 		})
 	}
+
+	private async fetchInputNames(): Promise<void> {
+		try {
+			this.log('debug', `Fetching http://${this.config.host}/cgi-bin/instr`)
+			const respond = await fetch(`http://${this.config.host}/cgi-bin/instr`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded',
+				},
+				body: JSON.stringify({comhead: 'get input status', language: 0}),
+			})
+			const text = await respond.text()
+
+			const match = text.match(/"inname"\s*:\s*(\[.*?\])/)
+			if (match) {
+				const inname: string[] = JSON.parse(match[1])
+				const values: Record<string, string> = {}
+				inname.forEach((name: string, index: number) => {
+					values[`input_${index + 1}_name`] = name
+				})
+				;(this as any).setVariableValues(values)
+				this.log('debug', `Inputs mis à jour: ${inname.join(', ')}`)
+			}
+			else {
+				this.log('warn', `pas de champ inname trouvé dans: ${text}`)
+			}
+
+			} catch (e) {
+				this.log('error', `Erreur fetchInputNames: ${e}`)
+			}
+		}
+
+
 
 	private parseMessage(message: string): void {
 		const msg = message.toLowerCase()
@@ -487,7 +541,7 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 					type: 'simple',
 					name: `Input ${input} -> Output ${output}`,
 					style: {
-						text: `IN${input}\nOUT${output}`,
+						text: `$(lindy-38359-matrix:input_${input}_name)\n-> OUT${output}`,
 						size: '14',
 						color: 16777215,
 						bgcolor: 3212,
