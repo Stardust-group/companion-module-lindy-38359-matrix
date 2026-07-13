@@ -13,7 +13,7 @@ interface LindyTypes {
 	variables: Record<string, never>
 }
 
-const CHOICE_INPUTS = Array.from({ length: 16 }, (_, i) => ({
+/*const CHOICE_INPUTS = Array.from({ length: 16 }, (_, i) => ({
 	id: String(i + 1),
 	label: `Input ${i + 1}`,
 }))
@@ -24,7 +24,7 @@ const CHOICES_OUTPUTS = [
 		id: String(i + 1),
 		label: `Output ${i + 1}`,
 	})),
-]
+]*/
 
 const CHOICE_PRESETS = Array.from({ length: 16 }, (_, i) => ({
 	id: String(i + 1),
@@ -85,6 +85,9 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 	async destroy(): Promise<void> {
 		this.tcp?.destroy()
 	}
+
+	private inputNames: Map<number, string> = new Map()
+	private outputNames: Map<number, string> = new Map()
 
 	// configUpdated reçoit aussi 2 arguments en v2.0.4
 	async configUpdated(config: LindyConfig, _secrets: unknown): Promise<void> {
@@ -149,53 +152,77 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 	}
 
 	private async fetchVideoStatus(): Promise<void> {
-    try {
-        this.log('debug', `Fetching video status from http://${this.config.host}/cgi-bin/instr`)
-        const respond = await fetch(`http://${this.config.host}/cgi-bin/instr`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: JSON.stringify({ comhead: 'get video status', language: 0 }),
-        })
-        const text = await respond.text()
-        const data = JSON.parse(text)
+		try {
+			this.log('debug', `Fetching video status from http://${this.config.host}/cgi-bin/instr`)
+			const respond = await fetch(`http://${this.config.host}/cgi-bin/instr`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded',
+				},
+				body: JSON.stringify({ comhead: 'get video status', language: 0 }),
+			})
+			const text = await respond.text()
+			const data = JSON.parse(text)
 
-        const values: Record<string, string> = {}
+			const values: Record<string, string> = {}
 
-        // Noms des entrées
-        if (data.allinputname) {
-            data.allinputname.forEach((name: string, index: number) => {
-                values[`input_${index + 1}_name`] = name
-            })
-            this.log('debug', `Inputs mis à jour: ${data.allinputname.join(', ')}`)
-        }
+			// Noms des entrées
+			if (data.allinputname) {
+				data.allinputname.forEach((name: string, index: number) => {
+					values[`input_${index + 1}_name`] = name
+					this.inputNames.set(index + 1, name)
+				})
+				this.log('debug', `Inputs mis à jour: ${data.allinputname.join(', ')}`)
+			}
 
-        // Noms des sorties
-        if (data.alloutputname) {
-            data.alloutputname.slice(0, 16).forEach((name: string, index: number) => {
-                values[`output_${index + 1}_name`] = name
-				this.log('debug', `output_${index + 1}_name = ${name}`)
-            })
-            this.log('debug', `Outputs mis à jour: ${data.alloutputname.slice(0, 16).join(', ')}`)
-        }
+			// Noms des sorties
+			if (data.alloutputname) {
+				data.alloutputname.slice(0, 16).forEach((name: string, index: number) => {
+					values[`output_${index + 1}_name`] = name
+					this.outputNames.set(index + 1, name)
+					this.log('debug', `output_${index + 1}_name = ${name}`)
+				})
+				this.log('debug', `Outputs mis à jour: ${data.alloutputname.slice(0, 16).join(', ')}`)
+			}
 
-        // Routing actuel — allsource[i] = input assigné à output i+1
-        if (data.allsource) {
-            data.allsource.slice(0, 16).forEach((input: number, index: number) => {
-                const output = String(index + 1)
-                this.currentRouting.set(output, String(input))
-            })
-            ;(this as any).checkFeedbacks('route_active')
-            this.log('debug', `Routing mis à jour depuis allsource`)
-        }
+			// Routing actuel — allsource[i] = input assigné à output i+1
+			if (data.allsource) {
+				data.allsource.slice(0, 16).forEach((input: number, index: number) => {
+					const output = String(index + 1)
+					this.currentRouting.set(output, String(input))
+				})
+				;(this as any).checkFeedbacks('route_active')
+				this.log('debug', `Routing mis à jour depuis allsource`)
+			}
 
-        ;(this as any).setVariableValues(values)
+			;(this as any).setVariableValues(values)
+		} catch (e) {
+			this.log('error', `Erreur fetchVideoStatus: ${e}`)
+		}
+		this.refreshChoices()
+	}
 
-    } catch (e) {
-        this.log('error', `Erreur fetchVideoStatus: ${e}`)
-    }
-}
+	private getInputChoices(): { id: string; label: string }[] {
+		return Array.from({ length: 16 }, (_, i) => ({
+			id: String(i + 1),
+			label: `${i + 1} - ${this.inputNames.get(i + 1) ?? `Input ${i + 1}`}`,
+		}))
+	}
+
+	private getOutputChoices(): { id: string; label: string }[] {
+		return [
+			{ id: '0', label: 'All Outputs' },
+			...Array.from({ length: 16 }, (_, i) => ({
+				id: String(i + 1),
+				label: `${i + 1} - ${this.outputNames.get(i + 1) ?? `Output ${i + 1}`}`,
+			})),
+		]
+	}
+
+	private refreshChoices(): void {
+		this.registerActions()
+		this.registerFeedbacks()
+	}
 
 	private parseMessage(message: string): void {
 		const msg = message.toLowerCase()
@@ -306,8 +333,8 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 			route_input: {
 				name: 'Route Input to Output',
 				options: [
-					{ type: 'dropdown', id: 'input', label: 'Input', default: '1', choices: CHOICE_INPUTS },
-					{ type: 'dropdown', id: 'output', label: 'Output', default: '1', choices: CHOICES_OUTPUTS },
+					{ type: 'dropdown', id: 'input', label: 'Input', default: '1', choices: this.getInputChoices() },
+					{ type: 'dropdown', id: 'output', label: 'Output', default: '1', choices: this.getOutputChoices() },
 				],
 				callback: async (action: any) => {
 					const input = String(action.options.input)
@@ -375,7 +402,7 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 			hdmi_stream: {
 				name: 'Enable/Disable HDMI Output Stream',
 				options: [
-					{ type: 'dropdown', id: 'output', label: 'Output', default: '1', choices: CHOICES_OUTPUTS },
+					{ type: 'dropdown', id: 'output', label: 'Output', default: '1', choices: this.getOutputChoices() },
 					{
 						type: 'dropdown',
 						id: 'state',
@@ -411,7 +438,7 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 			scaler_mode: {
 				name: 'Define Scaler Mode',
 				options: [
-					{ type: 'dropdown', id: 'output', label: 'Output', default: '1', choices: CHOICES_OUTPUTS },
+					{ type: 'dropdown', id: 'output', label: 'Output', default: '1', choices: this.getOutputChoices() },
 					{
 						type: 'dropdown',
 						id: 'state',
@@ -457,7 +484,7 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 			edid: {
 				name: 'Set EDID for Input',
 				options: [
-					{ type: 'dropdown', id: 'input', label: 'Input', default: '1', choices: CHOICE_INPUTS },
+					{ type: 'dropdown', id: 'input', label: 'Input', default: '1', choices: this.getInputChoices() },
 					{ type: 'dropdown', id: 'edid', label: 'EDID', default: '1', choices: CHOICES_EDID },
 				],
 				callback: async (action: any) => {
@@ -495,8 +522,8 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 				type: 'boolean',
 				name: 'Route Active',
 				options: [
-					{ type: 'dropdown', id: 'input', label: 'Input', default: '1', choices: CHOICE_INPUTS },
-					{ type: 'dropdown', id: 'output', label: 'Output', default: '1', choices: CHOICES_OUTPUTS },
+					{ type: 'dropdown', id: 'input', label: 'Input', default: '1', choices: this.getInputChoices() },
+					{ type: 'dropdown', id: 'output', label: 'Output', default: '1', choices: this.getOutputChoices() },
 				],
 				defaultStyle: {
 					bgcolor: 3212,
@@ -526,7 +553,7 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 			hdmi_stream_active: {
 				type: 'boolean',
 				name: 'HDMI Stream Active',
-				options: [{ type: 'dropdown', id: 'output', label: 'Output', default: '1', choices: CHOICES_OUTPUTS }],
+				options: [{ type: 'dropdown', id: 'output', label: 'Output', default: '1', choices: this.getOutputChoices() }],
 				defaultStyle: {
 					bgcolor: 9830400,
 					color: 16777215,
@@ -564,8 +591,8 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 					type: 'simple',
 					name: `Input ${input} -> Output ${output}`,
 					style: {
-						text: `$(lindy-38359-matrix:input_${input}_name)\n-> $(lindy-38359-matrix:output_${output}_name)`,
-						size: '14',
+						text: `${input}-$(lindy-38359-matrix:input_${input}_name)\n-> \n${output}-$(lindy-38359-matrix:output_${output}_name)`,
+						size: '12',
 						color: 16777215,
 						bgcolor: 3212,
 					},
