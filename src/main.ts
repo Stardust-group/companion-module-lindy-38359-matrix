@@ -76,9 +76,9 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 		this.registerVariables()
 		this.registerPresets()
 
-		this.fetchInputNames()
+		void this.fetchInputNames()
 		setInterval(() => {
-			this.fetchInputNames()
+			void this.fetchInputNames()
 		}, 60000)
 	}
 
@@ -134,7 +134,6 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 			},
 			...inputVars,
 		})
-
 		;(this as any).setVariableValues({
 			power_button_text: this.isPoweredOn ? 'ETEINDRE' : 'ALLUMER',
 			lock_button_text: this.isPanelLocked ? 'DEVERROUILLER' : 'VERROUILLER',
@@ -149,7 +148,7 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 				headers: {
 					'Content-Type': 'application/x-www-form-urlencoded',
 				},
-				body: JSON.stringify({comhead: 'get input status', language: 0}),
+				body: JSON.stringify({ comhead: 'get input status', language: 0 }),
 			})
 			const text = await respond.text()
 
@@ -162,17 +161,13 @@ class LindyMatrixInstance extends InstanceBase<LindyTypes> {
 				})
 				;(this as any).setVariableValues(values)
 				this.log('debug', `Inputs mis à jour: ${inname.join(', ')}`)
-			}
-			else {
+			} else {
 				this.log('warn', `pas de champ inname trouvé dans: ${text}`)
 			}
-
-			} catch (e) {
-				this.log('error', `Erreur fetchInputNames: ${e}`)
-			}
+		} catch (e) {
+			this.log('error', `Erreur fetchInputNames: ${e}`)
 		}
-
-
+	}
 
 	private parseMessage(message: string): void {
 		const msg = message.toLowerCase()
